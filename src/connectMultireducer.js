@@ -12,7 +12,7 @@ export default function connectMultireducer(mapStateToProps, actions = {}) {
       static displayName = `ConnectMultireducer(${getDisplayName(DecoratedComponent)})`;
       static propTypes = {
         multireducerKey: PropTypes.string.isRequired
-      }
+      };
 
       componentWillMount() {
         this.generateConnectedComponent(this.props);
@@ -26,15 +26,16 @@ export default function connectMultireducer(mapStateToProps, actions = {}) {
       static DecoratedComponent = DecoratedComponent;
 
       generateConnectedComponent({multireducerKey}) {
+        const doStatePropsDependOnOwnProps = mapStateToProps.length !== 1
+        let finalMapStateToProps;
+        if (doStatePropsDependOnOwnProps) {
+          finalMapStateToProps = (state, ownProps) => mapStateToProps(multireducerKey, state, ownProps)
+        } else {
+          finalMapStateToProps = (state) => mapStateToProps(multireducerKey, state)
+        }
         this.ConnectedComponent =
           connect(
-            state => {
-              const slice = state.multireducer[multireducerKey];
-              if (!slice) {
-                throw new Error(`No state for multireducer key "${multireducerKey}". You initialized multireducer with ${Object.keys(state.multireducer).join(', ')}.`);
-              }
-              return mapStateToProps ? mapStateToProps(slice) : slice;
-            },
+            finalMapStateToProps,
             multireducerBind(actions, multireducerKey)
           )(DecoratedComponent);
       }
